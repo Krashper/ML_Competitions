@@ -1,0 +1,12 @@
+database:
+  host: localhost
+  port: 5432
+  username: bim
+  password: bum
+  dbname: bam
+
+queries:
+  get_survived_counts: |
+      SELECT Survived, COUNT(*) cnt FROM Passengers
+      WHERE Sex IN (?)
+      GROUP BY Survived

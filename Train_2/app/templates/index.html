@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сегментация пользователей</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/general.css') }}">
+</head>
+<body>
+    <h1>Сегментация пользователей</h1>
+    <h2>Введите данные во все поля:</h2>
+    <form action="/predict" method="post">
+        <div class="field_block">
+            <label for="expenses_sum">Введите сумму затрат на рекламу:</label>
+            <input type="text" id="expenses_sum" name="expenses_sum">
+        </div>
+        <div class="field_block">
+            <label for="expenses_mean">Введите среднее значение затрат на рекламу:</label>
+            <input type="text" id="expenses_mean" name="expenses_mean">
+        </div>
+        <div class="field_block">
+            <label for="expenses_max">Введите максимальную затрату на рекламу:</label>
+            <input type="text" id="expenses_max" name="expenses_max">
+        </div>
+        <div class="field_block">
+            <label for="expenses_min">Введите минимальную затрату на рекламу:</label>
+            <input type="text" id="expenses_min" name="expenses_min">
+        </div>
+        <div class="field_block">
+            <label for="expenses_std">Введите стандартное отклонение затрат на рекламу:</label>
+            <input type="text" id="expenses_std" name="expenses_std">
+        </div>
+        <div class="field_block">
+            <label for="region_turkey">Введите кол-во сессий пользователя через регион Турцию:</label>
+            <input type="text" id="region_turkey" name="region_turkey">
+        </div>
+        <div class="field_block">
+            <label for="channel_adnonsense">Введите кол-во переходов на сайт через рекламу AdNonSense:</label>
+            <input type="text" id="channel_adnonsense" name="channel_adnonsense">
+        </div>
+        <div class="field_block">
+            <label for="device_iphone">Введите кол-во переходов на сайт через устройство iPhone:</label>
+            <input type="text" id="device_iphone" name="device_iphone">
+        </div>
+        <div class="field_block">
+            <label for="region_thailand">Введите кол-во сессий пользователя через регион Тайланд:</label>
+            <input type="text" id="region_thailand" name="region_thailand">
+        </div>
+        <div class="field_block">
+            <label for="channel_leapbob">Введите кол-во переходов на сайт через рекламу LeapBob:</label>
+            <input type="text" id="channel_leapbob" name="channel_leapbob">
+        </div>
+        <button type="submit">Отправить</button>
+    </form>
+    {% if prediction %}
+        <h2>Результаты:</h2>
+        <p><strong>Сегмент пользователя:</strong> {{ prediction["predicted_cluster"] }}</p>
+        <p><strong>Описание сегмента:</strong> {{ prediction["description"] }}</p>
+    {% endif %}
+</body>
+</html>

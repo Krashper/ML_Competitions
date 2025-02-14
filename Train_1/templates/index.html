@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Survival Prediction</title>
+    <style>
+        .severity-indicator {
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            background-color: yellow;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Прогноз выживаемости пациента</h1>
+
+    <!-- Форма для загрузки файла -->
+    <form action="/predict" method="post" enctype="multipart/form-data">
+        <label for="file">Загрузите файл данных пациента (CSV):</label>
+        <input type="file" id="file" name="file" required>
+        <button type="submit">Отправить</button>
+    </form>
+
+    <!-- Вывод ошибок -->
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <!-- Результаты -->
+    {% if life_expectancy_days %}
+        <h2>Результаты:</h2>
+        <p><strong>Прогноз продолжительности жизни:</strong> {{ life_expectancy_days }} дней</p>
+        <p><strong>Статус выживаемости:</strong> {{ survival_status }}</p>
+        <p><strong>Индикатор степени тяжести:</strong></p>
+        <span class="severity-indicator" style="color: {{ severity_indicator }}"></span>
+    {% endif %}
+</body>
+</html>

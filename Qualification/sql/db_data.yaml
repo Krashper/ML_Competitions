@@ -1,0 +1,11 @@
+database:
+  connection:
+    username: postgres
+    password: 86754231qaZ
+    db_name: Stations
+    host: localhost
+    port: 5432
+
+  queries:
+    get_db_stations:
+      SELECT * FROM trips

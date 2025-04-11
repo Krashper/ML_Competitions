@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Предсказание Плотности населения</h1>
+        <form action="/predict" method="POST" enctype="multipart/form-data">
+
+            <div class="form-group">
+                <label for="Country">Страна:</label>
+                <select id="Country" name="Country" required>
+                    {% for country in countries %}
+                        <option value="{{ country }}">{{ country }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="Region">Регион:</label>
+                <select id="Region" name="Region" required>
+                    {% for region in regions %}
+                        <option value="{{ region }}">{{ region }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="Year">Год:</label>
+                <input type="number" name="Year" step="1" value="2025" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Water Source Type">Тип источника воды:</label>
+                <select id="Water Source Type" name="Water Source Type" required>
+                    {% for water_type in water_types %}
+                        <option value="{{ water_type }}">{{ water_type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="Contaminant Level (ppm)">Уровень загрязняющих веществ:</label>
+                <input type="number" name="Contaminant Level (ppm)" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="pH Level">Уровень pH:</label>
+                <input type="number" name="pH Level" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Turbidity (NTU)">Мутность:</label>
+                <input type="number" name="Turbidity (NTU)" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Dissolved Oxygen (mg/L)">Растворённый кислород:</label>
+                <input type="number" name="Dissolved Oxygen (mg/L)" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Nitrate Level (mg/L)">Уровень нитратов:</label>
+                <input type="number" name="Nitrate Level (mg/L)" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Lead Concentration (µg/L)">Концентрация свинца:</label>
+                <input type="number" name="Lead Concentration (µg/L)" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Bacteria Count (CFU/mL)">Кол-во бактерий:</label>
+                <input type="number" name="Bacteria Count (CFU/mL)" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Water Treatment Method">Метод очистки воды:</label>
+                <select id="Water Treatment Method" name="Water Treatment Method" required>
+                    {% for treatment_method in treatment_methods %}
+                        <option value="{{ treatment_method }}">{{ treatment_method }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="Access to Clean Water (% of Population)">Доступ к чистой воде (в %):</label>
+                <input type="number" name="Access to Clean Water (% of Population)" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Diarrheal Cases per 100,000 people">Случаи диареи на 100 000 чел:</label>
+                <input type="number" name="Diarrheal Cases per 100,000 people" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Cholera Cases per 100,000 people">Случаи холеры на 100 000 чел:</label>
+                <input type="number" name="Cholera Cases per 100,000 people" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Typhoid Cases per 100,000 people">Случаи тифа на 100 000 чел:</label>
+                <input type="number" name="Typhoid Cases per 100,000 people" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Infant Mortality Rate (per 1,000 live births)">Коэффициент детской смертности:</label>
+                <input type="number" name="Infant Mortality Rate (per 1,000 live births)" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="GDP per Capita (USD)">ВВП на душу населения:</label>
+                <input type="number" name="GDP per Capita (USD)" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Healthcare Access Index (0-100)">Индекс доступности здравоохранения:</label>
+                <input type="number" name="Healthcare Access Index (0-100)" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Urbanization Rate (%)">Уровень урбанизации:</label>
+                <input type="number" name="Urbanization Rate (%)" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Sanitation Coverage (% of Population)">Охват сануслугами:</label>
+                <input type="number" name="Sanitation Coverage (% of Population)" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Rainfall (mm per year)">Осадки (мм в год):</label>
+                <input type="number" name="Rainfall (mm per year)" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="Temperature (°C)">Температура воздуха:</label>
+                <input type="number" name="Temperature (°C)" step="1" required>
+            </div>
+
+            <button type="submit">Узнать Spending Score</button>
+        </form>
+
+        {% if prediction %}
+            <div class="result success">
+                <h2>Результат: {{ prediction }}</h2>
+            </div>
+        {% endif %}
+
+        {% if error %}
+            <div class="result error">
+                <h2>Ошибка: {{ error }}</h2>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

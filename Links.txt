@@ -1,0 +1,73 @@
+https://github.com/mpraz/gpx-tracks/tree/main
+
+import numpy as np
+import folium
+import requests
+from io import BytesIO
+from PIL import Image
+import math
+
+# Координаты центра
+lat, lon = 55.751244, 37.618423
+zoom = 16
+tile_size = 512  # размер картинки в пикселях
+
+# Получаем тайл (static map от OSM через сторонний сервис)
+tile_url = f"https://staticmap.openstreetmap.de/staticmap.php?center={lat},{lon}&zoom={zoom}&size={tile_size}x{tile_size}&maptype=mapnik"
+response = requests.get(tile_url)
+img = Image.open(BytesIO(response.content)).convert("RGB")
+img_array = np.array(img)
+
+# Центр изображения
+center_x, center_y = tile_size // 2, tile_size // 2
+
+# Определяем цвета объектов
+object_colors = {
+    'Вода': [(0, 0, 255), (0, 191, 255)],
+    'Лес': [(0, 128, 0), (34, 139, 34)],
+    'Здания': [(201, 201, 201), (180, 180, 180)],
+    'Дороги': [(240, 240, 240), (255, 255, 255)],
+}
+
+def color_distance(c1, c2):
+    return np.linalg.norm(np.array(c1) - np.array(c2))
+
+# Поиск ближайшего пикселя нужного цвета
+def find_nearest_color_pixel(target_colors):
+    min_dist = float('inf')
+    min_coords = None
+
+    for y in range(img_array.shape[0]):
+        for x in range(img_array.shape[1]):
+            pixel = tuple(img_array[y, x])
+            if any(color_distance(pixel, target) < 30 for target in target_colors):  # допускаем погрешность
+                dist = math.hypot(center_x - x, center_y - y)
+                if dist < min_dist:
+                    min_dist = dist
+                    min_coords = (x, y)
+    return min_coords, min_dist
+
+# Конвертация пиксельного расстояния в метры (очень грубо: зависит от масштаба)
+def pixel_to_meters(pixel_distance, zoom_level=zoom):
+    meters_per_pixel = 156543.03392 * math.cos(math.radians(lat)) / (2 ** zoom_level)
+    return pixel_distance * meters_per_pixel
+
+# Вычисление расстояний
+distances = {}
+for obj, colors in object_colors.items():
+    coords, pix_dist = find_nearest_color_pixel(colors)
+    if coords:
+        dist_meters = pixel_to_meters(pix_dist)
+        distances[obj] = round(dist_meters, 2)
+    else:
+        distances[obj] = None
+
+print("📏 Расстояния до ближайших объектов:")
+for obj, dist in distances.items():
+    if dist:
+        print(f" - {obj}: {dist} м")
+    else:
+        print(f" - {obj}: не найдено")
+
+# Можно сохранить карту
+img.save("static_map.png")

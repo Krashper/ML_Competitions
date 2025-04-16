@@ -71,3 +71,9 @@ for obj, dist in distances.items():
 
 # Можно сохранить карту
 img.save("static_map.png")
+
+
+from lxml import etree
+exts = point.extensions
+for child in exts:
+      print(f"Тег: {child.tag}, Значение: {child.text}")

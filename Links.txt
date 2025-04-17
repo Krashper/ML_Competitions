@@ -161,3 +161,156 @@ def visualize_topo_map(points, flood_points, center_lat, center_lng, radius=1000
     except Exception as e:
         print(f"Ошибка при визуализации карты: {e}")
         return None
+
+
+
+
+
+
+
+from flask import Flask, request, jsonify, send_file
+from datetime import datetime
+import osmnx as ox
+import matplotlib.pyplot as plt
+from io import BytesIO
+
+app = Flask(__name__)
+
+# Моковая функция для получения точек маршрута (в реальной системе будет запрос к БД)
+def get_track_points(track_id, start_date, end_date):
+    # Здесь должна быть логика получения реальных данных
+    # Пример моковых данных - маршрут по центру Москвы
+    return [
+        (55.7558, 37.6176), (55.7565, 37.6185), 
+        (55.7572, 37.6193), (55.7580, 37.6201)
+    ]
+
+# Моковая функция для получения точек подтопления (в реальной системе будет модель)
+def get_flood_points(track_id, start_date, end_date):
+    # Здесь должна быть логика предсказания подтоплений
+    return [
+        (55.7565, 37.6185), (55.7570, 37.6190)
+    ]
+
+# Функция визуализации (адаптированная из предыдущего примера)
+def visualize_topo_map(points, flood_points, center_lat, center_lng, radius=1000):
+    try:
+        G = ox.graph_from_point((center_lat, center_lng), dist=radius, network_type="all", simplify=True)
+        
+        fig, ax = ox.plot_graph(G, show=False, close=False, 
+                              edge_color="gray", node_size=0, 
+                              bgcolor="white", figsize=(10, 8))
+        
+        # Водоёмы
+        try:
+            water = ox.features_from_point((center_lat, center_lng), 
+                                         tags={"natural": "water"}, 
+                                         dist=radius)
+            if not water.empty:
+                water.plot(ax=ax, color="blue", alpha=0.5)
+        except:
+            pass
+        
+        # Здания
+        try:
+            buildings = ox.features_from_point((center_lat, center_lng), 
+                                              tags={"building": True}, 
+                                              dist=radius)
+            if not buildings.empty:
+                buildings.plot(ax=ax, color="orange", alpha=0.7)
+        except:
+            pass
+        
+        # Зелёные зоны
+        try:
+            green = ox.features_from_point((center_lat, center_lng), 
+                                        tags={"landuse": "grass", "natural": "wood"}, 
+                                        dist=radius)
+            if not green.empty:
+                green.plot(ax=ax, color="green", alpha=0.3)
+        except:
+            pass
+        
+        # Маршрут
+        lngs, lats = zip(*points)
+        ax.plot(lngs, lats, color="red", linewidth=3)
+        
+        # Точки подтопления
+        if flood_points:
+            flood_lngs, flood_lats = zip(*flood_points)
+            ax.scatter(flood_lngs, flood_lats, color="blue", s=50, 
+                       edgecolor="darkblue", linewidth=1, zorder=5,
+                       label="Flooded areas")
+
+        # Легенда
+        legend_elements = [
+            plt.Line2D([0], [0], color='red', lw=3, label='Маршрут'),
+            plt.Patch(facecolor='blue', alpha=0.5, label='Водоёмы'),
+            plt.Patch(facecolor='orange', alpha=0.7, label='Здания'),
+            plt.Patch(facecolor='green', alpha=0.3, label='Зелёные зоны'),
+        ]
+        
+        if flood_points:
+            legend_elements.append(
+                plt.Line2D([0], [0], marker='o', color='w', label='Зоны подтопления',
+                      markerfacecolor='blue', markersize=10, markeredgecolor='darkblue')
+            )
+            
+        ax.legend(handles=legend_elements, loc='upper left')
+
+        # Сохраняем в буфер вместо файла
+        img_buffer = BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=300, bbox_inches="tight")
+        img_buffer.seek(0)
+        plt.close()
+        
+        return img_buffer
+
+    except Exception as e:
+        print(f"Ошибка визуализации: {str(e)}")
+        return None
+
+@app.route('/api/track_map', methods=['GET'])
+def get_track_map():
+    # Получаем параметры из запроса
+    track_id = request.args.get('track_id')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Валидация параметров
+    if not all([track_id, start_date, end_date]):
+        return jsonify({"error": "Необходимы параметры: track_id, start_date, end_date"}), 400
+    
+    try:
+        # Парсинг дат
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({"error": "Некорректный формат даты. Используйте YYYY-MM-DD"}), 400
+    
+    # Получаем данные
+    try:
+        points = get_track_points(track_id, start_date, end_date)
+        flood_points = get_flood_points(track_id, start_date, end_date)
+        
+        if not points:
+            return jsonify({"error": "Маршрут не найден"}), 404
+        
+        # Центр карты - средняя точка маршрута
+        center_lat = sum(p[0] for p in points) / len(points)
+        center_lng = sum(p[1] for p in points) / len(points)
+        
+        # Генерация карты
+        img_buffer = visualize_topo_map(points, flood_points, center_lat, center_lng)
+        
+        if not img_buffer:
+            return jsonify({"error": "Ошибка генерации карты"}), 500
+        
+        # Отправка изображения
+        return send_file(img_buffer, mimetype='image/png')
+    
+    except Exception as e:
+        return jsonify({"error": f"Внутренняя ошибка сервера: {str(e)}"}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)

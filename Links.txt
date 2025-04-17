@@ -77,3 +77,87 @@ from lxml import etree
 exts = point.extensions
 for child in exts:
       print(f"Тег: {child.tag}, Значение: {child.text}")
+
+
+
+
+
+
+import osmnx as ox
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+
+def visualize_topo_map(points, flood_points, center_lat, center_lng, radius=1000, filename="map.png"):
+    try:
+        # получение данных по точке
+        G = ox.graph_from_point((center_lat, center_lng), dist=radius, network_type="all", simplify=True)
+        
+        fig, ax = ox.plot_graph(G, show=False, close=False, 
+                              edge_color="gray", node_size=0, 
+                              bgcolor="white", figsize=(10, 8))
+        
+        # водоёмы (синий)
+        try:
+            water = ox.features_from_point((center_lat, center_lng), 
+                                         tags={"natural": "water"}, 
+                                         dist=radius)
+            if not water.empty:
+                water.plot(ax=ax, color="blue", alpha=0.5)
+        except:
+            pass
+        
+        # здания (оранжевый)
+        try:
+            buildings = ox.features_from_point((center_lat, center_lng), 
+                                              tags={"building": True}, 
+                                              dist=radius)
+            if not buildings.empty:
+                buildings.plot(ax=ax, color="orange", alpha=0.7)
+        except:
+            pass
+        
+        # зелёные зоны (зелёный)
+        try:
+            green = ox.features_from_point((center_lat, center_lng), 
+                                        tags={"landuse": "grass", "natural": "wood"}, 
+                                        dist=radius)
+            if not green.empty:
+                green.plot(ax=ax, color="green", alpha=0.3)
+        except:
+            pass
+        
+        # трек маршрута
+        lngs, lats = zip(*points)
+        ax.plot(lngs, lats, color="red", linewidth=3)
+        
+        # точки с подтоплениями (если они есть)
+        if flood_points:
+            flood_lngs, flood_lats = zip(*flood_points)
+            ax.scatter(flood_lngs, flood_lats, color="blue", s=50, 
+                       edgecolor="darkblue", linewidth=1, zorder=5,
+                       label="Flooded areas")
+
+        # Добавляем легенду
+        legend_elements = [
+            Line2D([0], [0], color='red', lw=3, label='Маршрут'),
+            Patch(facecolor='blue', alpha=0.5, label='Водоёмы'),
+            Patch(facecolor='orange', alpha=0.7, label='Здания'),
+            Patch(facecolor='green', alpha=0.3, label='Зелёные зоны'),
+        ]
+        
+        if flood_points:
+            legend_elements.append(
+                Line2D([0], [0], marker='o', color='w', label='Зоны подтопления',
+                      markerfacecolor='blue', markersize=10, markeredgecolor='darkblue')
+            )
+            
+        ax.legend(handles=legend_elements, loc='upper left')
+
+        plt.savefig(filename, dpi=300, bbox_inches="tight")
+        plt.close()
+        return filename
+
+    except Exception as e:
+        print(f"Ошибка при визуализации карты: {e}")
+        return None
